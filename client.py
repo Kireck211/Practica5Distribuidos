@@ -10,7 +10,7 @@ def main():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.connect((server, port))
 
-	thread = threading.Thread(name="receiver", target=receiver, args=[s])
+	thread = threading.Thread(name="receiver", target=receiver, daemon=True, args=[s])
 	thread.start()
 
 	print("-------- Bienvenido al minichat -------\n")
@@ -25,9 +25,7 @@ def main():
 
 		if(line[0] == "exit"):
 			s.close()
-			sys.exit()
-			print("exiting")
-			break;
+			exit()
 
 		elif(line[0] == "list_commands"):
 			print("listing commands")
@@ -46,8 +44,6 @@ def main():
 
 
 	
-	thread.join()
-	print("fin")
 	#msg_out = {
 	#	'type': "setName",
 	#	'data': {
@@ -59,7 +55,10 @@ def main():
 	#s.sendto(json.dumps(msg_out).encode('utf-8'), (server, port))
 
 	
-	#s.close()
+	s.close()
+	exit()
+
+def 
 
 
 def receiver(s):
