@@ -41,7 +41,6 @@ public class App
                 int port = receivePacket.getPort();
                 String sentence = new String(receivePacket.getData());
                 Gson gson = new Gson();
-                DatagramPacket sendPacket = null;
                 BaseRequest baseRequest = gson.fromJson(sentence, BaseRequest.class);
 
                 switch (baseRequest.getType()) {
@@ -49,6 +48,7 @@ public class App
                         SetUser setUser = gson.fromJson(Arrays.toString(receivePacket.getData()), SetUser.class);
                         if (!users.containsKey(setUser.getData().getContent())) {
                             users.put(setUser.getData().getContent(), new ConnectionData(IPAddress, port));
+                            DatagramPacket sendData = new DatagramPacket()
                         }
                         break;
                     case SEND_MESSAGE:

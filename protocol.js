@@ -1,38 +1,58 @@
-// types of requests
+// Types of requests
+
 // Register new user
 var request1 = {
-    "type": "setName",
-    "data": {
-        "content": "userNickname"
+    type: "set_name",
+    data: {
+        content: "userNickname"
     }
 };
 
 // Send message private user
 var request2 = {
-    "type": "sendMessage",
-    "data" : {
-        "to": "exampleUser1",
-        "content": "text text text text"
+    type: "send_message",
+    data : {
+        to: "exampleUser1",
+        content: "text text text text"
     }
 };
 
-// Send message to all connected users
+// Request message to all connected users
 var request3 = {
-    "type": "sendMessage",
-    "data" : {
-        "to": "all",
-        "content": "text text text text"
+    type: "send_message",
+    data : {
+        to: "all",
+        content: "text text text text"
     }
 };
 
-// User disconnected
-var request3 = {
-    "type": "exit"
+// Request connected users
+var requestList = {
+    type: "list_users"
 };
 
+// Request user disconnected
+var request3 = {
+    type: "exit"
+};
+
+// Response Everything ok
+var responseOk = {
+    type: "response",
+    resultCode: 200
+};
+
+// Message to client
+var responseMessage = {
+    type : "message_received",
+    data: {
+        from: "user2",
+        content: "text text text"
+    }
+};
 // Internal server error
-var response = {
-    "type": "response",
-    "resultCode": 500,
-    "error": "error description"
+var responseBad = {
+    type: "response",
+    resultCode: 500,
+    error: "error description"
 };
