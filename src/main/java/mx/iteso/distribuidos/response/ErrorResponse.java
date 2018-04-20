@@ -21,12 +21,6 @@ public class ErrorResponse {
 
     public ErrorResponse() {}
 
-    public ErrorResponse(String type, int resultCode, String error) {
-        this.type = type;
-        this.resultCode = resultCode;
-        this.error = error;
-    }
-
     public ErrorResponse(String error) {
         this.type = RESPONSE;
         this.resultCode = RESPONSE_ERROR_CODE;

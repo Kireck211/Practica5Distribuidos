@@ -6,6 +6,7 @@ public class Constants {
     public static final String EXIT = "exit";
     public static final String LIST_USERS = "list_users";
     public static final String RESPONSE = "response";
+    public static final String MESSAGE_RECEIVED = "message_received";
     public static final int RESPONSE_ERROR_CODE = 500;
     public static final String USER_TAKEN = "Sorry, user already taken, try again please.";
     public static final String NO_REQUEST = "Error on request";
