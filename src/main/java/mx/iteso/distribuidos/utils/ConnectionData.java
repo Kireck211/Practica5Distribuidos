@@ -29,4 +29,8 @@ public class ConnectionData {
     public void setPort(int port) {
         this.port = port;
     }
+
+    public boolean equals(ConnectionData obj) {
+        return this.ipAddress.equals(obj.ipAddress) && this.port == obj.port;
+    }
 }

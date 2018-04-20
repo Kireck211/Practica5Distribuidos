@@ -50,6 +50,15 @@ var responseMessage = {
         content: "text text text"
     }
 };
+
+// List of users
+var responseUsers = {
+    type: "list_users",
+    data: {
+        users: ["user1", "user2", "user3"]
+    }
+};
+
 // Internal server error
 var responseBad = {
     type: "response",
