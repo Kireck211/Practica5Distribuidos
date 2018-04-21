@@ -13,6 +13,10 @@ public class ListUserResponse {
     @Expose
     private String type;
 
+    @SerializedName("resultCode")
+    @Expose
+    private int resutlCode;
+
     @SerializedName("data")
     @Expose
     private Data data;
@@ -37,6 +41,7 @@ public class ListUserResponse {
 
     public ListUserResponse() {
         type = LIST_USERS;
+        resutlCode = 200;
         data = new Data();
     }
 
@@ -54,5 +59,13 @@ public class ListUserResponse {
 
     public void setData(Data data) {
         this.data = data;
+    }
+
+    public int getResutlCode() {
+        return resutlCode;
+    }
+
+    public void setResutlCode(int resutlCode) {
+        this.resutlCode = resutlCode;
     }
 }

@@ -45,6 +45,7 @@ var responseOk = {
 // Message to client
 var responseMessage = {
     type : "message_received",
+    resultCode: 200,
     data: {
         from: "user2",
         content: "text text text"
@@ -54,6 +55,7 @@ var responseMessage = {
 // List of users
 var responseUsers = {
     type: "list_users",
+    resultCode: 200,
     data: {
         users: ["user1", "user2", "user3"]
     }

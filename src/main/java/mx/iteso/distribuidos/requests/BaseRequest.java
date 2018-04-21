@@ -22,7 +22,10 @@ public class BaseRequest {
         this.type = type;
     }
 
-    public boolean isType(String type) {
-        return this.type.equals(type);
+    @Override
+    public String toString() {
+        return "BaseRequest{" +
+                "type='" + type + '\'' +
+                '}';
     }
 }

@@ -20,128 +20,60 @@ import java.util.*;
 
 import static mx.iteso.distribuidos.utils.Constants.*;
 
-/**
- * Hello world!
- *
- */
-public class App 
+public class App
 {
     private static Map<String, ConnectionData> users;
+    private static Gson gson = new Gson();
 
     public static void main( String[] args ) {
 
         try {
             DatagramSocket serverSocket = new DatagramSocket(PORT);
             byte[] receiveData = new byte[1024];
-
+            users = new HashMap<>();
             while(true) {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 serverSocket.receive(receivePacket);
                 InetAddress IPAddress = receivePacket.getAddress();
                 int port = receivePacket.getPort();
-                String sentence = new String(receivePacket.getData());
-                Gson gson = new Gson();
-                BaseRequest baseRequest = gson.fromJson(sentence, BaseRequest.class);
+                int length = receivePacket.getLength();
+
+                String from = getUser(IPAddress, port);
+                if (from == null)
+                    continue;
+
+                String request = new String(receivePacket.getData()).substring(0, length);
+                BaseRequest baseRequest = gson.fromJson(request, BaseRequest.class);
+                System.out.println(request);
 
                 switch (baseRequest.getType()) {
-                    case SET_NAME: {
-                        SetUser setUser = gson.fromJson(Arrays.toString(receivePacket.getData()), SetUser.class);
-                        if (!users.containsKey(setUser.getData().getContent())) {
-                            users.put(setUser.getData().getContent(), new ConnectionData(IPAddress, port));
-                            OkResponse ok = new OkResponse();
-                            String response = gson.toJson(ok, OkResponse.class);
-                            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
-                                    response.length(),
-                                    IPAddress,
-                                    port);
-                            serverSocket.send(sendPacket);
-                        } else {
-                            ErrorResponse error = new ErrorResponse(USER_TAKEN);
-                            String response = gson.toJson(error, ErrorResponse.class);
-                            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
-                                    response.length(),
-                                    IPAddress,
-                                    port);
-                            serverSocket.send(sendPacket);
-                        }
+                    case SET_NAME:
+                        setName(request, IPAddress, port, serverSocket);
                         break;
-                    }
-                    case SEND_MESSAGE: {
-                        Message message = gson.fromJson(sentence, Message.class);
-                        String from = getUser(IPAddress, port);
-                        if (from == null)
-                            return;
-                        if (message.getData().getTo().equals("all")) {
-                            DatagramPacket sendPacket;
-                            for (Map.Entry<String, ConnectionData> entry : users.entrySet()) {
-                                MessageResponse messageResponse = new MessageResponse();
-                                messageResponse.getData().setFrom(from);
-                                messageResponse.getData().setContent(message.getData().getMessage());
-                                String response = gson.toJson(messageResponse, MessageResponse.class);
-                                sendPacket = new DatagramPacket(response.getBytes(),
-                                        response.length(),
-                                        entry.getValue().getIpAddress(),
-                                        entry.getValue().getPort());
-                                serverSocket.send(sendPacket);
-                            }
-                            return;
-                        }
-                        ConnectionData connectionData = users.get(message.getData().getTo());
-                        if (connectionData != null) {
-                            MessageResponse messageResponse = new MessageResponse();
-                            messageResponse.getData().setFrom(from);
-                            messageResponse.getData().setContent(message.getData().getMessage());
-                            String response = gson.toJson(messageResponse, MessageResponse.class);
-                            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
-                                    response.length(),
-                                    connectionData.getIpAddress(),
-                                    connectionData.getPort());
-                            serverSocket.send(sendPacket);
-                        } else {
-                            ErrorResponse errorResponse = new ErrorResponse(NO_USER_WITH_NICKNAME);
-                            String response = gson.toJson(errorResponse, ErrorResponse.class);
-                            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
-                                    response.length(),
-                                    IPAddress,
-                                    port);
-                        }
+                    case SEND_MESSAGE:
+                        sendMessage(request, IPAddress, port, serverSocket);
                         break;
-                    }
-                    case LIST_USERS: {
-                        ListUserResponse listUserResponse = new ListUserResponse();
-                        List<String> userNames = new ArrayList<>();
-                        for (Map.Entry<String, ConnectionData> user : users.entrySet()) {
-                            userNames.add(user.getKey());
-                        }
-                        listUserResponse.getData().setUsers(userNames);
-                        String response = gson.toJson(listUserResponse, ListUserResponse.class);
-                        DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
-                                response.length(),
-                                IPAddress,
-                                port);
-                        serverSocket.send(sendPacket);
+                    case LIST_USERS:
+                        listUsers(IPAddress, port, serverSocket);
                         break;
-                    }
-                    case EXIT: {
-                        String user = getUser(IPAddress, port);
-                        if (user != null) {
-                            users.remove(user);
-                        }
+                    case EXIT:
+                        exit(IPAddress, port);
                         break;
-                    }
                     default:
-                        ErrorResponse errorResponse = new ErrorResponse(NO_REQUEST);
-                        String responseError = gson.toJson(errorResponse, ErrorResponse.class);
-                        DatagramPacket sendPacket = new DatagramPacket(responseError.getBytes(),
-                                responseError.length(),
-                                IPAddress,
-                                port);
-                        serverSocket.send(sendPacket);
+                    notValidRequestError(IPAddress, port, serverSocket);
                 }
             }
         } catch (SocketException e) {
+            System.out.println("Socket Exception");
+            System.out.println(e.getMessage());
             e.printStackTrace();
         } catch (IOException e) {
+            System.out.println("IOException Exception");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e)  {
+            System.out.println("Other Exception");
+            System.out.println(e.getMessage());
             e.printStackTrace();
         }
     }
@@ -149,10 +81,111 @@ public class App
     private static String getUser(InetAddress IPAddress, int port) {
         ConnectionData search = new ConnectionData(IPAddress, port);
         for(Map.Entry<String, ConnectionData> user: users.entrySet()) {
-            if (user.equals(search)){
+            if (user.getValue().equals(search)){
                 return user.getKey();
             }
         }
         return null;
     }
+
+    private static void setName(String request, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
+        SetUser setUser = gson.fromJson(request, SetUser.class);
+        if (!users.containsKey(setUser.getData().getContent())) {
+            users.put(setUser.getData().getContent(), new ConnectionData(IPAddress, port));
+            OkResponse ok = new OkResponse();
+            String response = gson.toJson(ok, OkResponse.class);
+            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                    response.length(),
+                    IPAddress,
+                    port);
+            serverSocket.send(sendPacket);
+        } else {
+            ErrorResponse error = new ErrorResponse(USER_TAKEN);
+            String response = gson.toJson(error, ErrorResponse.class);
+            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                    response.length(),
+                    IPAddress,
+                    port);
+            serverSocket.send(sendPacket);
+        }
+    }
+
+    private static void sendMessage(String request, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
+        Message message = gson.fromJson(request, Message.class);
+        String from = getUser(IPAddress, port);
+        if (from == null)
+            return;
+        if (message.getData().getTo().equals("all")) {
+            DatagramPacket sendPacket;
+            for (Map.Entry<String, ConnectionData> entry : users.entrySet()) {
+                if (entry.getKey().equals(from))
+                    continue;
+                MessageResponse messageResponse = new MessageResponse();
+                messageResponse.getData().setFrom(from);
+                messageResponse.getData().setContent(message.getData().getMessage());
+                String response = gson.toJson(messageResponse, MessageResponse.class);
+                sendPacket = new DatagramPacket(response.getBytes(),
+                        response.length(),
+                        entry.getValue().getIpAddress(),
+                        entry.getValue().getPort());
+                serverSocket.send(sendPacket);
+            }
+            return;
+        }
+        ConnectionData connectionData = users.get(message.getData().getTo());
+        if (connectionData != null) {
+            MessageResponse messageResponse = new MessageResponse();
+            messageResponse.getData().setFrom(from);
+            messageResponse.getData().setContent(message.getData().getMessage());
+            String response = gson.toJson(messageResponse, MessageResponse.class);
+            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                    response.length(),
+                    connectionData.getIpAddress(),
+                    connectionData.getPort());
+            serverSocket.send(sendPacket);
+        } else {
+            ErrorResponse errorResponse = new ErrorResponse(NO_USER_WITH_NICKNAME);
+            String response = gson.toJson(errorResponse, ErrorResponse.class);
+            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                    response.length(),
+                    IPAddress,
+                    port);
+            serverSocket.send(sendPacket);
+        }
+    }
+
+    private static void listUsers(InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
+        ListUserResponse listUserResponse = new ListUserResponse();
+        List<String> userNames = new ArrayList<>();
+        ConnectionData connectionData = new ConnectionData(IPAddress, port);
+        for (Map.Entry<String, ConnectionData> user : users.entrySet()) {
+            if (!user.getValue().equals(connectionData))
+                userNames.add(user.getKey());
+        }
+        listUserResponse.getData().setUsers(userNames);
+        String response = gson.toJson(listUserResponse, ListUserResponse.class);
+        DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                response.length(),
+                IPAddress,
+                port);
+        serverSocket.send(sendPacket);
+    }
+
+    private static void exit(InetAddress IPAddress, int port) {
+        String user = getUser(IPAddress, port);
+        if (user != null) {
+            users.remove(user);
+        }
+    }
+
+    private static void notValidRequestError(InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
+        ErrorResponse errorResponse = new ErrorResponse(NO_REQUEST);
+        String responseError = gson.toJson(errorResponse, ErrorResponse.class);
+        DatagramPacket sendPacket = new DatagramPacket(responseError.getBytes(),
+                responseError.length(),
+                IPAddress,
+                port);
+        serverSocket.send(sendPacket);
+    }
+
 }

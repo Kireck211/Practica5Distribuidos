@@ -9,6 +9,10 @@ public class MessageResponse {
     @Expose
     private String type;
 
+    @SerializedName("resultCode")
+    @Expose
+    private int resultCode;
+
     @SerializedName("data")
     @Expose
     private Data data;
@@ -44,6 +48,7 @@ public class MessageResponse {
 
     public MessageResponse() {
         type = MESSAGE_RECEIVED;
+        resultCode = 200;
         data = new Data();
     }
 
