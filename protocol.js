@@ -1,7 +1,7 @@
 // Types of requests
 
 // Register new user
-var request1 = {
+var requestSendMessage = {
     type: "set_name",
     data: {
         content: "userNickname"
@@ -9,7 +9,7 @@ var request1 = {
 };
 
 // Send message private user
-var request2 = {
+var requestSendMesage2 = {
     type: "send_message",
     data : {
         to: "exampleUser1",
@@ -18,7 +18,7 @@ var request2 = {
 };
 
 // Request message to all connected users
-var request3 = {
+var requestSendMessage3 = {
     type: "send_message",
     data : {
         to: "all",
@@ -32,8 +32,19 @@ var requestList = {
 };
 
 // Request user disconnected
-var request3 = {
+var requestExit = {
     type: "exit"
+};
+
+var requestSendFile = {
+    type: "send_file",
+    data: {
+        receiver: "user"
+    }
+};
+
+var requestEndFile = {
+    type: "file_sent"
 };
 
 // Response Everything ok
@@ -66,4 +77,11 @@ var responseBad = {
     type: "response",
     resultCode: 500,
     error: "error description"
+};
+
+var responseReceiveFile = {
+    type: "receive_file",
+    data: {
+        from: "user1"
+    }
 };

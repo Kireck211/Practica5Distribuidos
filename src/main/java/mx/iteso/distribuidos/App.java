@@ -1,14 +1,8 @@
 package mx.iteso.distribuidos;
 
 import com.google.gson.Gson;
-import mx.iteso.distribuidos.requests.BaseRequest;
-import mx.iteso.distribuidos.requests.Exit;
-import mx.iteso.distribuidos.requests.Message;
-import mx.iteso.distribuidos.requests.SetUser;
-import mx.iteso.distribuidos.response.ErrorResponse;
-import mx.iteso.distribuidos.response.ListUserResponse;
-import mx.iteso.distribuidos.response.MessageResponse;
-import mx.iteso.distribuidos.response.OkResponse;
+import mx.iteso.distribuidos.requests.*;
+import mx.iteso.distribuidos.response.*;
 import mx.iteso.distribuidos.utils.ConnectionData;
 
 import java.io.IOException;
@@ -39,11 +33,16 @@ public class App
                 int length = receivePacket.getLength();
 
                 String from = getUser(IPAddress, port);
-                if (from == null)
-                    continue;
-
                 String request = new String(receivePacket.getData()).substring(0, length);
+                if (from != null && users.get(from).isSending_File()) {
+                    ConnectionData receiver = users.get(users.get(from).getFile_receiver());
+                    sendFilePackage(receiver.getIpAddress(), receiver.getPort(), serverSocket, receiveData);
+                }
                 BaseRequest baseRequest = gson.fromJson(request, BaseRequest.class);
+                if (from == null && !baseRequest.getType().equals(SET_NAME)) {
+                    continue;
+                }
+
                 System.out.println(request);
 
                 switch (baseRequest.getType()) {
@@ -56,12 +55,19 @@ public class App
                     case LIST_USERS:
                         listUsers(IPAddress, port, serverSocket);
                         break;
+                    case SEND_FILE:
+                        registerFileRequest(from, IPAddress, port, serverSocket, request);
+                        break;
+                    case FILE_SENT:
+                        fileSent(from);
+                        break;
                     case EXIT:
                         exit(IPAddress, port);
                         break;
                     default:
-                    notValidRequestError(IPAddress, port, serverSocket);
+                        notValidRequestError(IPAddress, port, serverSocket);
                 }
+
             }
         } catch (SocketException e) {
             System.out.println("Socket Exception");
@@ -186,6 +192,47 @@ public class App
                 IPAddress,
                 port);
         serverSocket.send(sendPacket);
+    }
+
+    private static void sendFilePackage(InetAddress IPAddress, int port, DatagramSocket serverSocket, byte[] file_package) throws IOException {
+        DatagramPacket sendPacket = new DatagramPacket(file_package,
+                file_package.length,
+                IPAddress,
+                port);
+        serverSocket.send(sendPacket);
+    }
+
+    private static void registerFileRequest(String from, InetAddress IPAddress, int port, DatagramSocket serverSocket, String request) throws IOException {
+        if (from == null)
+            return;
+        SendFile sendFile = gson.fromJson(request, SendFile.class);
+        if (users.containsKey(sendFile.getData().getReceiver())) {
+            ErrorResponse errorResponse = new ErrorResponse(NO_USER_WITH_NICKNAME);
+            String response = gson.toJson(errorResponse, ErrorResponse.class);
+            DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                    response.length(),
+                    IPAddress,
+                    port);
+            serverSocket.send(sendPacket);
+            return;
+        }
+        ConnectionData connectionData = users.get(from);
+        connectionData.setSending_File(true);
+        connectionData.setFile_receiver(sendFile.getData().getReceiver());
+        ConnectionData receiver = users.get(sendFile.getData().getReceiver());
+        ReceiveFileResponse receiveFileResponse = new ReceiveFileResponse(from);
+        String response = gson.toJson(receiveFileResponse, ReceiveFileResponse.class);
+        DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                response.length(),
+                receiver.getIpAddress(),
+                receiver.getPort());
+        serverSocket.send(sendPacket);
+    }
+
+    private static void fileSent(String from) {
+        ConnectionData connectionData = users.get(from);
+        connectionData.setFile_receiver("");
+        connectionData.setSending_File(false);
     }
 
 }
