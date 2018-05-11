@@ -112,6 +112,7 @@ def send_file(s, f):
 	package = f.read(1024)
 	# TODO progress
 	while package:
+		time.sleep(.005)
 		s.sendto(package, (server, port))
 		package = f.read(1024)
 	print('File was sent')
@@ -146,9 +147,21 @@ def receiver(s):
 					f.write(res_raw)
 					s.settimeout(2)
 					res_raw, address = s.recvfrom(1024)
-			except timeout:
+			except socket.timeout:
 				f.close()
 				print('File received, check files folder.')
+			s.settimeout(None)
+
+		elif (res['type'] == SEND_FILE):
+			print('Sending file')
+			base_path = os.path.dirname(__file__)
+			file_path = os.path.abspath(os.path.join(base_path, 'files' , res['data']['name']))
+			try:
+				f = open(file_path, 'rb')
+			except:
+				print('Error, file not found')
+				continue
+			send_file(s,f)
 
 		elif (res['resultCode'] == 500):
 			print(res['error'])
@@ -162,16 +175,7 @@ def receiver(s):
 			elif (res['type'] == MESSAGE_RECEIVED):
 				print('{} says: {}'.format(res['data']['from'], res['data']['content']))
 
-			elif (res['type'] == SEND_FILE):
-				print('Sending file')
-				base_path = os.path.dirname(__file__)
-				file_path = os.path.abspath(os.path.join(base_path, 'files' , res['data']['name']))
-				try:
-					f = open(file_path, 'rb')
-				except:
-					print('Error, file not found')
-					continue
-				send_file(s,f)
+
 
 if __name__ == '__main__':
 	main()

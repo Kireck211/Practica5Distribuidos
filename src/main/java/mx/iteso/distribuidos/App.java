@@ -33,12 +33,21 @@ public class App
                 int length = receivePacket.getLength();
 
                 String from = getUser(IPAddress, port);
-                String request = new String(receivePacket.getData()).substring(0, length);
+                BaseRequest baseRequest;
                 if (from != null && users.get(from).isSending_File()) {
                     ConnectionData receiver = users.get(users.get(from).getFile_receiver());
-                    sendFilePackage(receiver.getIpAddress(), receiver.getPort(), serverSocket, receiveData);
+                    try {
+                        String request = new String(receivePacket.getData()).substring(0, length);
+                        baseRequest = gson.fromJson(request, BaseRequest.class);
+                        users.get(from).setSending_File(false);
+                        users.get(from).setFile_receiver("");
+                    } catch (Exception e) {
+                        sendFilePackage(receiver.getIpAddress(), receiver.getPort(), serverSocket, receivePacket);
+                        continue;
+                    }
                 }
-                BaseRequest baseRequest = gson.fromJson(request, BaseRequest.class);
+                String request = new String(receivePacket.getData()).substring(0, length);
+                baseRequest = gson.fromJson(request, BaseRequest.class);
                 if (from == null && !baseRequest.getType().equals(SET_NAME)) {
                     ErrorResponse errorResponse = new ErrorResponse(NOT_REGISTERED);
                     String response = gson.toJson(errorResponse, ErrorResponse.class);
@@ -211,7 +220,8 @@ public class App
         serverSocket.send(sendPacket);
     }
 
-    private static void sendFilePackage(InetAddress IPAddress, int port, DatagramSocket serverSocket, byte[] file_package) throws IOException {
+    private static void sendFilePackage(InetAddress IPAddress, int port, DatagramSocket serverSocket, DatagramPacket datagramPacket) throws IOException {
+        byte[] file_package = Arrays.copyOfRange(datagramPacket.getData(), 0, datagramPacket.getLength());
         DatagramPacket sendPacket = new DatagramPacket(file_package,
                 file_package.length,
                 IPAddress,
@@ -245,13 +255,14 @@ public class App
                 port);
         serverSocket.send(sendPacket);
 
-        ReceiveFileResponse receiveFileResponse = new ReceiveFileResponse(from);
+        String fileName = sendFile.getData().getName();
+        ReceiveFileResponse receiveFileResponse = new ReceiveFileResponse(from, fileName.substring(0, fileName.indexOf(".")) + "1" + fileName.substring(fileName.indexOf(".")));
         response = gson.toJson(receiveFileResponse, ReceiveFileResponse.class);
         sendPacket = new DatagramPacket(response.getBytes(),
                 response.length(),
                 receiver.getIpAddress(),
                 receiver.getPort());
-        serverSocket.send(sendPacket_);
+        serverSocket.send(sendPacket);
     }
 
     private static void fileSent(String from) {

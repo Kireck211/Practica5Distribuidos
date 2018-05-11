@@ -4,7 +4,6 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import static mx.iteso.distribuidos.utils.Constants.RECEIVE_FILE;
-import static mx.iteso.distribuidos.utils.Constants.SEND_FILE;
 
 public class ReceiveFileResponse {
     @SerializedName("type")
@@ -17,9 +16,9 @@ public class ReceiveFileResponse {
 
     public ReceiveFileResponse() {}
 
-    public ReceiveFileResponse(String user) {
+    public ReceiveFileResponse(String user, String name) {
         this.type = RECEIVE_FILE;
-        this.data = new Data(user);
+        this.data = new Data(user, name);
     }
 
     public String getType() {
@@ -43,10 +42,15 @@ public class ReceiveFileResponse {
         @Expose
         private String from;
 
+        @SerializedName("name")
+        @Expose
+        private String name;
+
         public Data() {}
 
-        public Data(String from) {
+        public Data(String from, String name) {
             this.from = from;
+            this.name = name;
         }
 
         public String getFrom() {
@@ -55,6 +59,14 @@ public class ReceiveFileResponse {
 
         public void setFrom(String from) {
             this.from = from;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
     }
 }
