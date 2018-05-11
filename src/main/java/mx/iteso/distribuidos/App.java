@@ -251,7 +251,7 @@ public class App
                 response.length(),
                 receiver.getIpAddress(),
                 receiver.getPort());
-        serverSocket.send(sendPacket);
+        serverSocket.send(sendPacket_);
     }
 
     private static void fileSent(String from) {

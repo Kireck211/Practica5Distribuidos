@@ -84,6 +84,19 @@ def main():
 			}
 			send_request(s, req)
 
+		elif (line[0] == 'block_user' or line[0] == 'bu'):
+			if (len(line) != 2):
+				print('ERROR -> \'send_file\' command expects 3 arguments')
+				continue
+			
+			req = {
+				'type' : 'block_user',
+				'data' : {
+					'content': line[1]
+				}
+			}
+			send_request(s, req)
+
 		else:
 			print('command not recognized')
 
@@ -135,15 +148,19 @@ def receiver(s):
 			except timeout:
 				f.close()
 				print('File received, check files folder.')
+
 		elif (res['resultCode'] == 500):
 			print(res['error'])
+
 		elif (res['resultCode'] == 200):
 			if (res['type'] == LIST_USERS):
 				print('Online users:')
 				for user in res['data']['users']:
 					print('* {}'.format(user))
+
 			elif (res['type'] == MESSAGE_RECEIVED):
 				print('{} says: {}'.format(res['data']['from'], res['data']['content']))
+
 			elif (res['type'] == SEND_FILE):
 				print('Sending file')
 				base_path = os.path.dirname(__file__)

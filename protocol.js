@@ -47,6 +47,14 @@ var requestEndFile = {
     type: "file_sent"
 };
 
+// Reques block given username
+var requestBlockUser = {
+    type: "block_user",
+    data: {
+        content: "userNickname"
+    }
+}
+
 // Response Everything ok
 var responseOk = {
     type: "response",
