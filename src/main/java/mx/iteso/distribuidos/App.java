@@ -150,6 +150,9 @@ public class App
             MessageResponse messageResponse = new MessageResponse();
             messageResponse.getData().setFrom(from);
             messageResponse.getData().setContent(message.getData().getMessage());
+            if (connectionData.getIpAddress().getHostAddress().equals(IPAddress.getHostAddress())
+                    && connectionData.getPort() == port)
+                return;
             String response = gson.toJson(messageResponse, MessageResponse.class);
             DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
                     response.length(),
@@ -176,7 +179,14 @@ public class App
                 userNames.add(user.getKey());
         }
         listUserResponse.getData().setUsers(userNames);
-        String response = gson.toJson(listUserResponse, ListUserResponse.class);
+        String response;
+        if (userNames.size() == 0) {
+            ErrorResponse errorResponse = new ErrorResponse(NO_ONLINE_USERS);
+            response = gson.toJson(errorResponse, ErrorResponse.class);
+
+        } else
+            response = gson.toJson(listUserResponse, ListUserResponse.class);
+
         DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
                 response.length(),
                 IPAddress,
@@ -213,7 +223,7 @@ public class App
         if (from == null)
             return;
         SendFile sendFile = gson.fromJson(request, SendFile.class);
-        if (users.containsKey(sendFile.getData().getReceiver())) {
+        if (! users.containsKey(sendFile.getData().getReceiver())) {
             ErrorResponse errorResponse = new ErrorResponse(NO_USER_WITH_NICKNAME);
             String response = gson.toJson(errorResponse, ErrorResponse.class);
             DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
@@ -227,8 +237,16 @@ public class App
         connectionData.setSending_File(true);
         connectionData.setFile_receiver(sendFile.getData().getReceiver());
         ConnectionData receiver = users.get(sendFile.getData().getReceiver());
+        SendFileResponse sendFileResponse = new SendFileResponse();
+        String response = gson.toJson(sendFileResponse, SendFileResponse.class);
+        DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                response.length(),
+                IPAddress,
+                port);
+        serverSocket.send(sendPacket);
+
         ReceiveFileResponse receiveFileResponse = new ReceiveFileResponse(from);
-        String response = gson.toJson(receiveFileResponse, ReceiveFileResponse.class);
+        response = gson.toJson(receiveFileResponse, ReceiveFileResponse.class);
         DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
                 response.length(),
                 receiver.getIpAddress(),

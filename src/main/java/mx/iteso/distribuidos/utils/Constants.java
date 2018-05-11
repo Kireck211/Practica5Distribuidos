@@ -14,5 +14,6 @@ public class Constants {
     public static final String NO_REQUEST = "Error on request";
     public static final String NO_USER_WITH_NICKNAME ="Sorry, could not find a user with that nickname, try again please.";
     public static final String NOT_REGISTERED = "Please register your user to perform this action";
+    public static final String NO_ONLINE_USERS = "No online users";
     public static final int PORT = 1234;
 }

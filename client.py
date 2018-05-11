@@ -57,7 +57,7 @@ def main():
 			send_request(s, req)
 
 		elif (line[0] == 'send_message' or line[0] == 'sm'):
-			if (len(line) < 2):
+			if (len(line) < 3):
 				print('ERROR -> \'send_message\' command expects 3 arguments')
 				continue	
 
@@ -65,7 +65,7 @@ def main():
 				'type': 'send_message',
 				'data': {
 					'to': line[1],
-					'content': ''.join(line[2:])
+					'content': ' '.join(line[2:])
 				}
 			}
 			send_request(s, req)
@@ -120,7 +120,7 @@ def receiver(s):
 			res_raw, address = s.recvfrom(1024)
 		except:
 			print('Connection failed, try again')
-			break
+			continue
 		res = json.loads(res_raw.decode('utf-8'))
 		if (res['type'] == 'send_file'):
 			base_path = os.path.dirname(__file__)
@@ -139,9 +139,6 @@ def receiver(s):
 			print(res['error'])
 		elif (res['resultCode'] == 200):
 			if (res['type'] == LIST_USERS):
-				if (len(res['data']['users']) == 0):
-					print('No online users.')
-					return
 				print('Online users:')
 				for user in res['data']['users']:
 					print('* {}'.format(user))
@@ -150,7 +147,7 @@ def receiver(s):
 			elif (res['type'] == SEND_FILE):
 				print('Sending file')
 				base_path = os.path.dirname(__file__)
-				file_path = os.path.abspath(os.path.join(base_path, 'files' , line[2]))
+				file_path = os.path.abspath(os.path.join(base_path, 'files' , res['data']['name']))
 				try:
 					f = open(file_path, 'rb')
 				except:
