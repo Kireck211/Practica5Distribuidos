@@ -238,9 +238,15 @@ public class App
     }
 
     private static void registerFileRequest(String from, InetAddress IPAddress, int port, DatagramSocket serverSocket, String request) throws IOException {
+
+        SendFile sendFile = gson.fromJson(request, SendFile.class);
+        String to = sendFile.getData().getReceiver();
         if (from == null)
             return;
-        SendFile sendFile = gson.fromJson(request, SendFile.class);
+
+        if(users.get(from).getBlockedUsers().contains(to))
+            return;
+
         if (! users.containsKey(sendFile.getData().getReceiver())) {
             ErrorResponse errorResponse = new ErrorResponse(NO_USER_WITH_NICKNAME);
             String response = gson.toJson(errorResponse, ErrorResponse.class);
