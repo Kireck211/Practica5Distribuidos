@@ -11,6 +11,7 @@ LIST_USERS = 'list_users'
 MESSAGE_RECEIVED = 'message_received'
 SEND_FILE = 'send_file'
 RECEIVE_FILE = 'receive_file'
+USER_BLOCKED = 'user_blocked'
 
 def main():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -93,7 +94,7 @@ def main():
 			req = {
 				'type' : 'block_user',
 				'data' : {
-					'content': line[1]
+					'user': line[1]
 				}
 			}
 			send_request(s, req)
@@ -171,6 +172,9 @@ def receiver(s):
 				print('Online users:')
 				for user in res['data']['users']:
 					print('* {}'.format(user))
+
+			if(res['type'] == USER_BLOCKED):
+				print("Usuario bloqueado")
 
 			elif (res['type'] == MESSAGE_RECEIVED):
 				print('{} says: {}'.format(res['data']['from'], res['data']['content']))

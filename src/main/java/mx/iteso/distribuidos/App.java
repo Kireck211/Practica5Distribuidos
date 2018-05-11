@@ -77,6 +77,9 @@ public class App
                     case FILE_SENT:
                         fileSent(from);
                         break;
+                    case BLOCK_USER:
+                        blockUser(request, IPAddress, port, serverSocket);
+                        break;
                     case EXIT:
                         exit(IPAddress, port);
                         break;
@@ -135,6 +138,11 @@ public class App
     private static void sendMessage(String request, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
         Message message = gson.fromJson(request, Message.class);
         String from = getUser(IPAddress, port);
+        String to = message.getData().getTo();
+
+        if(users.get(from).getBlockedUsers().contains(to))
+            return;
+
         if (from == null)
             return;
         if (message.getData().getTo().equals("all")) {
@@ -230,9 +238,15 @@ public class App
     }
 
     private static void registerFileRequest(String from, InetAddress IPAddress, int port, DatagramSocket serverSocket, String request) throws IOException {
+
+        SendFile sendFile = gson.fromJson(request, SendFile.class);
+        String to = sendFile.getData().getReceiver();
         if (from == null)
             return;
-        SendFile sendFile = gson.fromJson(request, SendFile.class);
+
+        if(users.get(from).getBlockedUsers().contains(to))
+            return;
+
         if (! users.containsKey(sendFile.getData().getReceiver())) {
             ErrorResponse errorResponse = new ErrorResponse(NO_USER_WITH_NICKNAME);
             String response = gson.toJson(errorResponse, ErrorResponse.class);
@@ -271,4 +285,35 @@ public class App
         connectionData.setSending_File(false);
     }
 
+    private static void blockUser(String request, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
+        BlockUser blockUser = gson.fromJson(request, BlockUser.class);
+        String blockedUser = blockUser.getData().getUser();
+        String requestUser = getUser(IPAddress, port);
+
+        if(users.containsKey(blockUser.getData().getUser()) && (!blockedUser.equals(requestUser)))
+        {
+            users.get(requestUser).getBlockedUsers().add(blockedUser);
+            users.get(blockedUser).getBlockedUsers().add(requestUser);
+            OkResponse okResponse = new OkResponse("user_blocked");
+            String response = gson.toJson(okResponse, OkResponse.class);
+            DatagramPacket sendPacket = new DatagramPacket(
+                    response.getBytes(),
+                    response.length(),
+                    IPAddress,
+                    port);
+            serverSocket.send(sendPacket);
+
+        }
+        else
+        {
+            ErrorResponse errorResponse = new ErrorResponse("Error, el usuario \"" + blockedUser + "\" no pudo ser bloqueado");
+            String response = gson.toJson(errorResponse, ErrorResponse.class);
+            DatagramPacket sendPacket = new DatagramPacket(
+                    response.getBytes(),
+                    response.length(),
+                    IPAddress,
+                    port);
+            serverSocket.send(sendPacket);
+        }
+    }
 }

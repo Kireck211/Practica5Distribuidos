@@ -1,12 +1,14 @@
 package mx.iteso.distribuidos.utils;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 
 public class ConnectionData {
     private InetAddress ipAddress;
     private int port;
     private boolean sending_File;
     private String file_receiver;
+    private ArrayList<String> blockedUsers;
 
     public ConnectionData() {
     }
@@ -15,6 +17,7 @@ public class ConnectionData {
         this.ipAddress = ipAddress;
         this.port = port;
         sending_File = false;
+        blockedUsers = new ArrayList<>();
     }
 
     public InetAddress getIpAddress() {
@@ -51,5 +54,13 @@ public class ConnectionData {
 
     public void setFile_receiver(String file_receiver) {
         this.file_receiver = file_receiver;
+    }
+
+    public ArrayList<String> getBlockedUsers() {
+        return blockedUsers;
+    }
+
+    public void setBlockedUsers(ArrayList<String> blockedUsers) {
+        this.blockedUsers = blockedUsers;
     }
 }
