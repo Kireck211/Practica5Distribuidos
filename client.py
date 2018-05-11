@@ -10,6 +10,7 @@ port = 1234
 LIST_USERS = 'list_users'
 MESSAGE_RECEIVED = 'message_received'
 SEND_FILE = 'send_file'
+RECEIVE_FILE = 'receive_file'
 
 def main():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -135,7 +136,7 @@ def receiver(s):
 			print('Connection failed, try again')
 			continue
 		res = json.loads(res_raw.decode('utf-8'))
-		if (res['type'] == 'send_file'):
+		if (res['type'] == RECEIVE_FILE):
 			base_path = os.path.dirname(__file__)
 			path = os.path.abspath(os.path.join(base_path, 'files', res['data']['name']))
 			f = open(path, 'wb')
@@ -170,8 +171,7 @@ def receiver(s):
 				except:
 					print('Error, file not found')
 					continue
-				#send_file(s,f)
-
+				send_file(s,f)
 
 if __name__ == '__main__':
 	main()

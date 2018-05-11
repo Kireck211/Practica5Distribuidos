@@ -2,8 +2,10 @@ package mx.iteso.distribuidos.response;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import mx.iteso.distribuidos.requests.SendFile;
 
 import static mx.iteso.distribuidos.utils.Constants.SEND_FILE;
+import static mx.iteso.distribuidos.utils.Constants.SET_NAME;
 
 public class SendFileResponse {
     @SerializedName("type")
@@ -19,12 +21,21 @@ public class SendFileResponse {
         data = new Data();
     }
 
+    public SendFileResponse(String name) {
+        type = SEND_FILE;
+        data = new Data(name);
+    }
+
     public class Data {
         @SerializedName("name")
         @Expose
         private String name;
 
         public Data() {}
+
+        public Data(String name) {
+            this.name = name;
+        }
 
         public String getName() {
             return name;

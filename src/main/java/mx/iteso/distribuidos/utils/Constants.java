@@ -6,6 +6,7 @@ public class Constants {
     public static final String EXIT = "exit";
     public static final String LIST_USERS = "list_users";
     public static final String SEND_FILE = "send_file";
+    public static final String RECEIVE_FILE = "receive_file";
     public static final String FILE_SENT = "file_sent";
     public static final String RESPONSE = "response";
     public static final String MESSAGE_RECEIVED = "message_received";

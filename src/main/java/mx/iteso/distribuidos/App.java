@@ -237,7 +237,7 @@ public class App
         connectionData.setSending_File(true);
         connectionData.setFile_receiver(sendFile.getData().getReceiver());
         ConnectionData receiver = users.get(sendFile.getData().getReceiver());
-        SendFileResponse sendFileResponse = new SendFileResponse();
+        SendFileResponse sendFileResponse = new SendFileResponse(sendFile.getData().getName());
         String response = gson.toJson(sendFileResponse, SendFileResponse.class);
         DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
                 response.length(),
@@ -247,7 +247,7 @@ public class App
 
         ReceiveFileResponse receiveFileResponse = new ReceiveFileResponse(from);
         response = gson.toJson(receiveFileResponse, ReceiveFileResponse.class);
-        DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+        sendPacket = new DatagramPacket(response.getBytes(),
                 response.length(),
                 receiver.getIpAddress(),
                 receiver.getPort());
