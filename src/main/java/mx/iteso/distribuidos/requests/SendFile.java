@@ -39,6 +39,10 @@ public class SendFile {
         @Expose
         private String receiver;
 
+        @SerializedName("name")
+        @Expose
+        private String name;
+
         public Data() {}
 
         public Data(String receiver) {
@@ -51,6 +55,14 @@ public class SendFile {
 
         public void setReceiver(String receiver) {
             this.receiver = receiver;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
     }
 }

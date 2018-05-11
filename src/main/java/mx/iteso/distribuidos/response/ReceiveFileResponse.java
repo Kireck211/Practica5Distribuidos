@@ -3,6 +3,7 @@ package mx.iteso.distribuidos.response;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import static mx.iteso.distribuidos.utils.Constants.RECEIVE_FILE;
 import static mx.iteso.distribuidos.utils.Constants.SEND_FILE;
 
 public class ReceiveFileResponse {
@@ -17,7 +18,7 @@ public class ReceiveFileResponse {
     public ReceiveFileResponse() {}
 
     public ReceiveFileResponse(String user) {
-        this.type = SEND_FILE;
+        this.type = RECEIVE_FILE;
         this.data = new Data(user);
     }
 
