@@ -16,4 +16,9 @@ public class OkResponse {
         type = "response";
         resultCode = 200;
     }
+
+    public OkResponse(String type) {
+        this.type = type;
+        resultCode = 200;
+    }
 }

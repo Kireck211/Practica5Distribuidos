@@ -40,6 +40,13 @@ public class App
                 }
                 BaseRequest baseRequest = gson.fromJson(request, BaseRequest.class);
                 if (from == null && !baseRequest.getType().equals(SET_NAME)) {
+                    ErrorResponse errorResponse = new ErrorResponse(NOT_REGISTERED);
+                    String response = gson.toJson(errorResponse, ErrorResponse.class);
+                    DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
+                            response.length(),
+                            IPAddress,
+                            port);
+                    serverSocket.send(sendPacket);
                     continue;
                 }
 
@@ -98,7 +105,7 @@ public class App
         SetUser setUser = gson.fromJson(request, SetUser.class);
         if (!users.containsKey(setUser.getData().getContent())) {
             users.put(setUser.getData().getContent(), new ConnectionData(IPAddress, port));
-            OkResponse ok = new OkResponse();
+            OkResponse ok = new OkResponse(SET_NAME);
             String response = gson.toJson(ok, OkResponse.class);
             DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
                     response.length(),
