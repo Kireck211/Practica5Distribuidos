@@ -112,7 +112,7 @@ def send_file(s, f):
 	package = f.read(1024)
 	# TODO progress
 	while package:
-		time.sleep(.005)
+		time.sleep(.00005)
 		s.sendto(package, (server, port))
 		package = f.read(1024)
 	print('File was sent')
