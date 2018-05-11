@@ -190,9 +190,11 @@ public class App
     private static void listUsers(InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
         ListUserResponse listUserResponse = new ListUserResponse();
         List<String> userNames = new ArrayList<>();
-        ConnectionData connectionData = new ConnectionData(IPAddress, port);
+        String requestUser = getUser(IPAddress, port);
+        ConnectionData connectionData = users.get(requestUser);
+
         for (Map.Entry<String, ConnectionData> user : users.entrySet()) {
-            if (!user.getValue().equals(connectionData))
+            if (!user.getKey().equals(requestUser) && !connectionData.getBlockedUsers().contains(user.getKey()))
                 userNames.add(user.getKey());
         }
         listUserResponse.getData().setUsers(userNames);
