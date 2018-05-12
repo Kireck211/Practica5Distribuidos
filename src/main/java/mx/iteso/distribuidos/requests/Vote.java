@@ -3,15 +3,15 @@ package mx.iteso.distribuidos.requests;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import static mx.iteso.distribuidos.utils.Constants.PING;
+import static mx.iteso.distribuidos.utils.Constants.VOTE;
 
-public class Ping {
+public class Vote {
     @SerializedName("type")
     @Expose
     private String type;
 
-    public Ping(){
-        type = PING;
+    public Vote() {
+        type = VOTE;
     }
 
     public String getType() {

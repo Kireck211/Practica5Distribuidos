@@ -8,6 +8,7 @@ import mx.iteso.distribuidos.utils.ConnectionData;
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 import static mx.iteso.distribuidos.utils.Constants.*;
 
@@ -379,6 +380,47 @@ public class App
                             sendDatagram(ping, IPAddress, port, datagramSocket);
                             break;
                         case VOTE:
+                            OkResponse okResponse = new OkResponse();
+                            sendDatagram(okResponse, IPAddress, port, datagramSocket);
+                            ArrayList<String> bullys = new ArrayList<>();
+
+                            ExecutorService executorService = Executors.newFixedThreadPool(bullys.size());
+                            List<Callable<Boolean>> callables = new ArrayList<>();
+
+                            for(String bully: bullys) {
+                                final InetAddress address = InetAddress.getByName(bully);
+                                callables.add(new Callable<Boolean>() {
+                                    @Override
+                                    public Boolean call() throws Exception {
+                                        DatagramSocket socket = new DatagramSocket(SERVER_PORT);
+                                        Vote vote = new Vote();
+                                        String request = gson.toJson(vote, Vote.class);
+                                        DatagramPacket sendPacket = new DatagramPacket(request.getBytes(), request.length(), address, SERVER_PORT);
+                                        socket.send(sendPacket);
+
+                                        byte[] receiveData = new byte[1024];
+                                        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                                        socket.receive(receivePacket);
+                                        return Boolean.TRUE;
+                                    }
+                                });
+                            }
+
+                            List<Future<Boolean>> futures =  executorService.invokeAll(callables, 2, TimeUnit.SECONDS);
+
+                            boolean noneResponded = false;
+                            for(Future<Boolean> future : futures) {
+                                try {
+                                    noneResponded |= future.get();
+                                } catch (Exception e) {
+                                    noneResponded = false;
+                                }
+                            }
+                            executorService.shutdown();
+
+                            if (noneResponded) {
+                                changeIP();
+                            }
                             break;
 
 
