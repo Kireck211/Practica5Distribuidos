@@ -19,6 +19,37 @@ public class App
     private static String coordinator = "127.0.0.1";
 
     public static void main( String[] args ) {
+        new java.util.Timer().schedule(
+                new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            System.out.println("Enviando ping al coordinador " + coordinator);
+                            DatagramSocket datagramSocket = new DatagramSocket(SERVER_PORT);
+                            byte[] receiveData = new byte[1024];
+                            DatagramPacket datagramPacket = new DatagramPacket(receiveData, receiveData.length);
+                            datagramSocket.setSoTimeout(2000);
+                            Ping ping = new Ping();
+                            InetAddress address = InetAddress.getByName(coordinator);
+                            sendDatagram(ping, address, SERVER_PORT, datagramSocket);
+
+                            datagramSocket.receive(datagramPacket);
+                            datagramSocket.close();
+                        } catch (UnknownHostException e) {
+                            e.printStackTrace();
+                        } catch (SocketTimeoutException e) {
+                            //TODO proceso de votacion
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                },
+                0,
+                5000
+        );
+
+
         try {
             DatagramSocket serverSocket = new DatagramSocket(PORT);
             byte[] receiveData = new byte[1024];
@@ -100,33 +131,7 @@ public class App
             e.printStackTrace();
         }
 
-        new java.util.Timer().schedule(
-                new java.util.TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            DatagramSocket datagramSocket = new DatagramSocket(SERVER_PORT);
-                            byte[] receiveData = new byte[1024];
-                            DatagramPacket datagramPacket = new DatagramPacket(receiveData, receiveData.length);
-                            datagramSocket.setSoTimeout(2000);
-                            Ping ping = new Ping();
-                            InetAddress address = InetAddress.getByName(coordinator);
-                            sendDatagram(ping, address, SERVER_PORT, datagramSocket);
 
-                            datagramSocket.receive(datagramPacket);
-                            datagramSocket.close();
-                        } catch (UnknownHostException e) {
-                            e.printStackTrace();
-                        } catch (SocketTimeoutException e) {
-                            //TODO proceso de votacion
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                },
-                5000
-        );
     }
 
     private static String getUser(InetAddress IPAddress, int port) {
