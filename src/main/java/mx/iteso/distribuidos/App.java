@@ -4,12 +4,10 @@ import com.google.gson.Gson;
 import mx.iteso.distribuidos.requests.*;
 import mx.iteso.distribuidos.response.*;
 import mx.iteso.distribuidos.utils.ConnectionData;
+import sun.security.x509.IPAddressName;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.util.*;
 
 import static mx.iteso.distribuidos.utils.Constants.*;
@@ -18,8 +16,11 @@ public class App
 {
     private static Map<String, ConnectionData> users;
     private static Gson gson = new Gson();
+    private static String coordinator = "127.0.0.1";
 
     public static void main( String[] args ) {
+
+
 
         try {
             DatagramSocket serverSocket = new DatagramSocket(PORT);
@@ -59,7 +60,7 @@ public class App
                     continue;
                 }
 
-                System.out.println(request);
+                System.out.println(request + PORT);
 
                 switch (baseRequest.getType()) {
                     case SET_NAME:
@@ -101,6 +102,34 @@ public class App
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
+
+        new java.util.Timer().schedule(
+                new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            DatagramSocket datagramSocket = new DatagramSocket(SERVER_PORT);
+                            byte[] receiveData = new byte[1024];
+                            DatagramPacket datagramPacket = new DatagramPacket(receiveData, receiveData.length);
+                            datagramSocket.setSoTimeout(2000);
+                            Ping ping = new Ping();
+                            InetAddress address = InetAddress.getByName(coordinator);
+                            sendDatagram(ping, address, SERVER_PORT, datagramSocket);
+
+                            datagramSocket.receive(datagramPacket);
+                            datagramSocket.close();
+                        } catch (UnknownHostException e) {
+                            e.printStackTrace();
+                        } catch (SocketTimeoutException e) {
+                            //TODO proceso de votacion
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                },
+                5000
+        );
     }
 
     private static String getUser(InetAddress IPAddress, int port) {
@@ -297,25 +326,64 @@ public class App
             users.get(requestUser).getBlockedUsers().add(blockedUser);
             users.get(blockedUser).getBlockedUsers().add(requestUser);
             OkResponse okResponse = new OkResponse("user_blocked");
-            String response = gson.toJson(okResponse, OkResponse.class);
-            DatagramPacket sendPacket = new DatagramPacket(
-                    response.getBytes(),
-                    response.length(),
-                    IPAddress,
-                    port);
-            serverSocket.send(sendPacket);
+            sendDatagram(okResponse, IPAddress, port, serverSocket);
 
         }
         else
         {
             ErrorResponse errorResponse = new ErrorResponse("Error, el usuario \"" + blockedUser + "\" no pudo ser bloqueado");
-            String response = gson.toJson(errorResponse, ErrorResponse.class);
-            DatagramPacket sendPacket = new DatagramPacket(
-                    response.getBytes(),
-                    response.length(),
-                    IPAddress,
-                    port);
-            serverSocket.send(sendPacket);
+            sendDatagram(errorResponse, IPAddress, port, serverSocket);
         }
     }
+
+    private static void sendDatagram(Object object, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
+        String message = gson.toJson(object, object.getClass());
+        DatagramPacket sendPacket = new DatagramPacket(
+                message.getBytes(),
+                message.length(),
+                IPAddress,
+                port);
+        serverSocket.send(sendPacket);
+    }
+
+    private class listener extends Thread {
+        @Override
+        public void run() {
+            try {
+                DatagramSocket datagramSocket = new DatagramSocket(SERVER_PORT);
+                byte[] receiveData = new byte[1024];
+                while(true)
+                {
+                    DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                    datagramSocket.receive(receivePacket);
+                    InetAddress IPAddress = receivePacket.getAddress();
+                    int port = receivePacket.getPort();
+                    int length = receivePacket.getLength();
+                    BaseRequest baseRequest;
+
+                    String request = new String(receivePacket.getData()).substring(0, length);
+                    baseRequest = gson.fromJson(request, BaseRequest.class);
+
+                    switch (baseRequest.getType())
+                    {
+                        case PING:
+                            Ping ping = new Ping();
+                            sendDatagram(ping, IPAddress, port, datagramSocket);
+                            break;
+                        case VOTE:
+                            break;
+
+
+                    }
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+
+
 }
