@@ -6,6 +6,7 @@ import os
 import time
 
 server = '127.0.0.1'#'192.168.43.238'
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 port = 1234
 LIST_USERS = 'list_users'
 MESSAGE_RECEIVED = 'message_received'
@@ -14,11 +15,13 @@ RECEIVE_FILE = 'receive_file'
 USER_BLOCKED = 'user_blocked'
 
 def main():
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	server_lock = threading.Lock()
 	s.connect((server, port))
 
-	thread = threading.Thread(name='receiver', target=receiver, daemon=True, args=[s])
+	thread = threading.Thread(name='receiver', target=receiver, daemon=True)
 	thread.start()
+	server_thread = threading.Thread(name='listener', target=listener, daemon=True, args=[server_lock])
+	server_thread.start()
 
 	print('-------- Welcome to the greatest minichat -------')
 	print_commands()
@@ -35,7 +38,7 @@ def main():
 
 		if (line[0] == 'exit' or line[0] == 'ex'):
 			req = {'type' : 'exit'}
-			send_request(s, req)
+			send_request(req, server_lock)
 			break
 
 		elif (line[0] == 'list_commands' or line[0] == 'lc'):
@@ -52,11 +55,11 @@ def main():
 					'content': line[1]
 				}
 			}
-			send_request(s, req)	
+			send_request(req, server_lock)
 
 		elif (line[0] == 'list_users' or line[0] == 'lu'):
 			req = { 'type' : 'list_users' }
-			send_request(s, req)
+			send_request(req, server_lock)
 
 		elif (line[0] == 'send_message' or line[0] == 'sm'):
 			if (len(line) < 3):
@@ -70,7 +73,7 @@ def main():
 					'content': ' '.join(line[2:])
 				}
 			}
-			send_request(s, req)
+			send_request(req, server_lock)
 
 		elif (line[0] == 'send_file' or line[0] == 'sf'):
 			if (len(line) != 3):
@@ -84,7 +87,7 @@ def main():
 					'name': line[2]
 				}
 			}
-			send_request(s, req)
+			send_request(req, server_lock)
 
 		elif (line[0] == 'block_user' or line[0] == 'bu'):
 			if (len(line) != 2):
@@ -97,7 +100,7 @@ def main():
 					'user': line[1]
 				}
 			}
-			send_request(s, req)
+			send_request(req, server_lock)
 
 		else:
 			print('command not recognized')
@@ -105,21 +108,25 @@ def main():
 	s.close()
 	exit()
 
-def send_request(s, req):
-	s.sendto(json.dumps(req).encode('utf-8'), (server, port))
+def send_request(req, server_lock):
+	with server_lock:
+		print(server)
+		s.sendto(json.dumps(req).encode('utf-8'), (server, port))
 
-def send_file(s, f):
+def send_file(f, server_lock):
 	#file_length = os.stat(f).st_size
 	package = f.read(1024)
 	# TODO progress
 	while package:
-		time.sleep(.00005)
-		s.sendto(package, (server, port))
-		package = f.read(1024)
+		with server_lock:
+			print(server)
+			time.sleep(.00005)
+			s.sendto(package, (server, port))
+			package = f.read(1024)
 	print('File was sent')
 	req = {}
 	req['type'] = 'file_sent'
-	send_request(s, req)
+	send_request(req, server_lock)
 
 def print_commands():
 	print('list_commands \t\t\t\t\tprints all the available commands in the chat')
@@ -130,7 +137,7 @@ def print_commands():
 	print('send_file [username] [filename]\t\t\tsend file to one connected user')
 	print('block_user [username]\t\t\t\tblock user by username')
 
-def receiver(s):
+def receiver():
 	while True:
 		try: 
 			res_raw, address = s.recvfrom(1024)
@@ -162,7 +169,7 @@ def receiver(s):
 			except:
 				print('Error, file not found')
 				continue
-			send_file(s,f)
+			send_file(f, server_lock)
 
 		elif (res['resultCode'] == 500):
 			print(res['error'])
@@ -179,7 +186,24 @@ def receiver(s):
 			elif (res['type'] == MESSAGE_RECEIVED):
 				print('{} says: {}'.format(res['data']['from'], res['data']['content']))
 
-
+def listener(server_lock):
+	global server
+	global s
+	global port
+	listener_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	listener_sock.bind(("127.0.0.1", 1235))
+	while True:
+		res_raw, address = listener_sock.recvfrom(1024)
+		#new_ip = res_raw.decode()
+		new_port = res_raw.decode()
+		with server_lock:
+			#server = str(new_ip)
+			port = int(new_port)
+			#print(type(server))
+			#print(server)
+			s.close()
+			s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			s.connect((server, port))
 
 if __name__ == '__main__':
 	main()

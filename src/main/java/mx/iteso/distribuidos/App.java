@@ -318,4 +318,17 @@ public class App
             serverSocket.send(sendPacket);
         }
     }
+
+    private static void changeIP() {
+        try {
+            DatagramSocket clientSocket = new DatagramSocket();
+            InetAddress IPAddress = InetAddress.getByName("localhost");
+            byte[] sendData = IPAddress.getHostAddress().getBytes();
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 12345);
+            clientSocket.send(sendPacket);
+            clientSocket.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
