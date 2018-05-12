@@ -22,4 +22,5 @@ public class Constants {
     public static final int SERVER_ID = 1;
     public static final String PING = "ping";
     public static final String VOTE = "vote";
+    public static final String COORDINATOR= "coordinator";
 }

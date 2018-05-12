@@ -5,7 +5,7 @@ import sys
 import os
 import time
 
-server = '127.0.0.1'#'192.168.43.238'
+server = '192.168.1.2'
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 port = 1234
 LIST_USERS = 'list_users'
