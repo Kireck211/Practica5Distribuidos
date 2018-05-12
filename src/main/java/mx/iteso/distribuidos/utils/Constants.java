@@ -18,4 +18,8 @@ public class Constants {
     public static final String NOT_REGISTERED = "Please register your user to perform this action";
     public static final String NO_ONLINE_USERS = "No online users";
     public static final int PORT = 1234;
+    public static final int SERVER_PORT = 1236;
+    public static final int SERVER_ID = 1;
+    public static final String PING = "ping";
+    public static final String VOTE = "vote";
 }
