@@ -30,7 +30,7 @@ public class App
         try {
             serversSocket = new DatagramSocket(SERVER_PORT);
             clientSocket = new DatagramSocket(PORT);
-            ipSocket = new DatagramSocket(IP_PORT);
+            ipSocket = new DatagramSocket();
             myIP = getMyIPAddress();
             Listener listener = new Listener();
             listener.start();

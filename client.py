@@ -191,16 +191,13 @@ def listener(server_lock):
 	global s
 	global port
 	listener_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	listener_sock.bind((server, 1235))
+	listener_sock.bind(("127.0.0.1", 1235))
 	while True:
 		res_raw, address = listener_sock.recvfrom(1024)
-		#new_ip = res_raw.decode()
-		new_port = res_raw.decode()
+		new_ip = res_raw.decode()
 		with server_lock:
-			#server = str(new_ip)
-			port = int(new_port)
-			#print(type(server))
-			#print(server)
+			server = str(new_ip)
+			print(server)
 			s.close()
 			s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 			s.connect((server, port))
