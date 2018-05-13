@@ -18,10 +18,11 @@ public class App
     private static Gson gson = new Gson();
     private static InetAddress myIP;
     private static String coordinator = "192.168.1.2";
-    private static ArrayList<String> servers = new ArrayList<String>(){{add("192.168.1.2");add("192.168.1.3");add("192.168.1.4");}};
+    private static ArrayList<String> servers = new ArrayList<String>(){{add("192.168.1.2");add("192.168.1.3");/*add("192.168.1.4");*/}};
     private static DatagramSocket serversSocket;
     private static DatagramSocket clientSocket;
     private static DatagramSocket ipSocket;
+    private static Listener listener;
 
     public static void main( String[] args ) {
 
@@ -32,8 +33,8 @@ public class App
             clientSocket = new DatagramSocket(PORT);
             ipSocket = new DatagramSocket();
             myIP = getMyIPAddress();
-            Listener listener = new Listener();
-            listener.start();
+            listener = new Listener();
+            //listener.start();
             voting();
             byte[] receiveData = new byte[1024];
             while(true) {
@@ -411,15 +412,14 @@ public class App
             callables.add(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    DatagramSocket socket = new DatagramSocket(SERVER_PORT);
                     Vote vote = new Vote();
                     String request = gson.toJson(vote, Vote.class);
                     DatagramPacket sendPacket = new DatagramPacket(request.getBytes(), request.length(), realAddress, SERVER_PORT);
-                    socket.send(sendPacket);
+                    serversSocket.send(sendPacket);
 
                     byte[] receiveData = new byte[1024];
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                    socket.receive(receivePacket);
+                    serversSocket.receive(receivePacket);
                     return Boolean.TRUE;
                 }
             });
@@ -427,7 +427,7 @@ public class App
 
         List<Future<Boolean>> futures = null;
         try {
-            futures = executorService.invokeAll(callables, 2, TimeUnit.SECONDS);
+            futures = executorService.invokeAll(callables);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -441,6 +441,7 @@ public class App
             }
         }
         executorService.shutdown();
+        listener.start();
 
         if (!responded) {
             changeIP();
@@ -484,16 +485,14 @@ public class App
                             if (myAddress.equals(coordinator))
                                 return;
                             System.out.println("Enviando ping al coordinador " + coordinator);
-                            DatagramSocket datagramSocket = new DatagramSocket(SERVER_PORT);
                             byte[] receiveData = new byte[1024];
                             DatagramPacket datagramPacket = new DatagramPacket(receiveData, receiveData.length);
-                            datagramSocket.setSoTimeout(2000);
+                            serversSocket.setSoTimeout(2000);
                             Ping ping = new Ping();
                             InetAddress address = InetAddress.getByName(coordinator);
-                            sendDatagram(ping, address, SERVER_PORT, datagramSocket);
+                            sendDatagram(ping, address, SERVER_PORT, serversSocket);
 
-                            datagramSocket.receive(datagramPacket);
-                            datagramSocket.close();
+                            serversSocket.receive(datagramPacket);
                         } catch (UnknownHostException e) {
                             e.printStackTrace();
                         } catch (SocketTimeoutException e) {
