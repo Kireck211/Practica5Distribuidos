@@ -1,5 +1,12 @@
 package mx.iteso.distribuidos.utils;
 
+import com.google.gson.Gson;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+
 public class Constants {
     public static final String SET_NAME = "set_name";
     public static final String SEND_MESSAGE = "send_message";
@@ -17,12 +24,24 @@ public class Constants {
     public static final String NO_USER_WITH_NICKNAME ="Sorry, could not find a user with that nickname, try again please.";
     public static final String NOT_REGISTERED = "Please register your user to perform this action";
     public static final String NO_ONLINE_USERS = "No online users";
-    public static final int PORT = 1234;
+    public static final int CLIENT_PORT = 1234;
     public static final int IP_PORT = 1235;
-    public static final int SERVER_PORT = 1236;
-    public static final int SERVER_ID = 1;
+    public static final int SERVER_VOTE = 1236;
+    public static final int SERVER_PING = 1237;
+    public static final int SERVER_COORDINATOR = 1238;
     public static final String PING = "ping";
     public static final String VOTE = "vote";
     public static final String COORDINATOR= "coordinator";
     public static final String REMOVE_CLIENT = "remove_client";
+
+    public static void sendDatagram(Object object, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
+        Gson gson = new Gson();
+        String message = gson.toJson(object, object.getClass());
+        DatagramPacket sendPacket = new DatagramPacket(
+                message.getBytes(),
+                message.length(),
+                IPAddress,
+                port);
+        serverSocket.send(sendPacket);
+    }
 }

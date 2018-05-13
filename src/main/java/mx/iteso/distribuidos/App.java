@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import mx.iteso.distribuidos.requests.*;
 import mx.iteso.distribuidos.response.*;
 import mx.iteso.distribuidos.utils.ConnectionData;
+import sun.plugin.dom.core.CoreConstants;
 
 import java.io.IOException;
 import java.net.*;
@@ -12,8 +13,7 @@ import java.util.concurrent.*;
 
 import static mx.iteso.distribuidos.utils.Constants.*;
 
-public class App
-{
+public class App implements ChangeCoordinatorListener {
     private static Map<String, ConnectionData> users = new HashMap<>();
     private static Gson gson = new Gson();
     private static InetAddress myIP;
@@ -22,15 +22,11 @@ public class App
     private static DatagramSocket serversSocket;
     private static DatagramSocket clientSocket;
     private static DatagramSocket ipSocket;
-    private static Listener listener;
 
     public static void main( String[] args ) {
-
-
-
         try {
             serversSocket = new DatagramSocket(SERVER_PORT);
-            clientSocket = new DatagramSocket(PORT);
+            clientSocket = new DatagramSocket(CLIENT_PORT);
             ipSocket = new DatagramSocket();
             myIP = getMyIPAddress();
             listener = new Listener();
@@ -71,7 +67,7 @@ public class App
                     continue;
                 }
 
-                System.out.println(request + PORT);
+                System.out.println(request + CLIENT_PORT);
 
                 switch (baseRequest.getType()) {
                     case SET_NAME:
@@ -334,14 +330,10 @@ public class App
             e.printStackTrace();
         }
     }
-    private static void sendDatagram(Object object, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
-        String message = gson.toJson(object, object.getClass());
-        DatagramPacket sendPacket = new DatagramPacket(
-                message.getBytes(),
-                message.length(),
-                IPAddress,
-                port);
-        serverSocket.send(sendPacket);
+
+    @Override
+    public void onChangeCoordinator(String newCoordinator) {
+        coordinator = newCoordinator;
     }
 
     private static class Listener extends Thread {
@@ -452,63 +444,12 @@ public class App
         }
     }
 
-    private static ArrayList<String> getBullies() {
-        ArrayList<String> bullies = new ArrayList<>();
-        String address = myIP.getHostAddress();
-        for(String bully : servers) {
-            if (address.compareTo(bully) < 0)
-                bullies.add(bully);
-        }
-        return bullies;
-    }
 
-    private static void sendCoordinator() {
-        try {
-            InetAddress IPAddress;
-            CoordinatorResponse coordinatorResponse;
-            if (!listener.isAlive())
-                listener.start();
-            for(String server: servers) {
-                if (myIP.getHostAddress().equals(server))
-                    continue;
-                IPAddress = InetAddress.getByName(server);
-                coordinatorResponse = new CoordinatorResponse(server);
-                sendDatagram(coordinatorResponse, IPAddress, SERVER_PORT, serversSocket);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+
+
 
     private static void startPings() {
-        new java.util.Timer().schedule(
-                new java.util.TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            String myAddress = myIP.getHostAddress();
-                            if (myAddress.equals(coordinator))
-                                return;
-                            System.out.println("Enviando ping al coordinador " + coordinator);
-                            byte[] receiveData = new byte[1024];
-                            DatagramPacket datagramPacket = new DatagramPacket(receiveData, receiveData.length);
-                            serversSocket.setSoTimeout(2000);
-                            Ping ping = new Ping();
-                            InetAddress address = InetAddress.getByName(coordinator);
-                            sendDatagram(ping, address, SERVER_PORT, serversSocket);
 
-                            serversSocket.receive(datagramPacket);
-                        } catch (SocketTimeoutException e) {
-                            voting();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                },
-                0,
-                5000
-        );
     }
 
     private static InetAddress getMyIPAddress() {
