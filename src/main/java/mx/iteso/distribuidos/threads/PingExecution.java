@@ -13,7 +13,7 @@ public class PingExecution extends Thread {
     private volatile boolean running = true;
     private volatile boolean sendPing = true;
     private VoteTriggerListener voteTriggerListener;
-    private String coordinator = "192.168.1.2";
+    private String coordinator = "10.0.0.1";
 
     public PingExecution(VoteTriggerListener voteTriggerListener) {
         this.voteTriggerListener = voteTriggerListener;
