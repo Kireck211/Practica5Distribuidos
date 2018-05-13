@@ -11,7 +11,7 @@ public class Vote {
     private String type;
 
     public Vote() {
-        type = VOTE;
+        this.type = VOTE;
     }
 
     public String getType() {

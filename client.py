@@ -20,7 +20,7 @@ def main():
 
 	thread = threading.Thread(name='receiver', target=receiver, args=[server_lock], daemon=True)
 	thread.start()
-	server_thread = threading.Thread(name='listener', target=listener, daemon=True, args=[server_lock])
+	server_thread = threading.Thread(name='coordinatorChangedListener', target=coordinatorChangedListener, daemon=True, args=[server_lock])
 	server_thread.start()
 
 	print('-------- Welcome to the greatest minichat -------')
@@ -186,7 +186,7 @@ def receiver(server_lock):
 			elif (res['type'] == MESSAGE_RECEIVED):
 				print('{} says: {}'.format(res['data']['from'], res['data']['content']))
 
-def listener(server_lock):
+def coordinatorChangedListener(server_lock):
 	global server
 	global s
 	global port
