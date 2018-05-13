@@ -34,7 +34,6 @@ public class App
             ipSocket = new DatagramSocket();
             myIP = getMyIPAddress();
             listener = new Listener();
-            //listener.start();
             voting();
             byte[] receiveData = new byte[1024];
             while(true) {
@@ -441,7 +440,8 @@ public class App
             }
         }
         executorService.shutdown();
-        listener.start();
+        if (listener.isInterrupted())
+            listener.start();
 
         if (!responded) {
             changeIP();
@@ -463,6 +463,8 @@ public class App
         try {
             InetAddress IPAddress;
             CoordinatorResponse coordinatorResponse;
+            if (!listener.isAlive())
+                listener.start();
             for(String server: servers) {
                 if (myIP.getHostAddress().equals(server))
                     continue;
@@ -493,10 +495,7 @@ public class App
                             sendDatagram(ping, address, SERVER_PORT, serversSocket);
 
                             serversSocket.receive(datagramPacket);
-                        } catch (UnknownHostException e) {
-                            e.printStackTrace();
                         } catch (SocketTimeoutException e) {
-                            //TODO proceso de votacion
                             voting();
                         } catch (IOException e) {
                             e.printStackTrace();
