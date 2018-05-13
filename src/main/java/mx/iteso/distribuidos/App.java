@@ -16,10 +16,12 @@ public class App
 {
     private static Map<String, ConnectionData> users;
     private static Gson gson = new Gson();
+    private static String myIP = "192.168.1.2";
     private static String coordinator = "192.168.1.2";
     private static ArrayList<String> servers = new ArrayList<String>(){{add("192.168.1.2");add("192.168.1.3");add("192.168.1.4");}};
 
     public static void main( String[] args ) {
+        getMyIPAddress();
         Listener listener = new Listener();
         listener.start();
         voting();
@@ -499,5 +501,25 @@ public class App
                 0,
                 5000
         );
+    }
+
+    private static void getMyIPAddress() {
+        Enumeration e = null;
+        try {
+            e = NetworkInterface.getNetworkInterfaces();
+        } catch (SocketException e1) {
+            e1.printStackTrace();
+        }
+        assert e != null;
+        while(e.hasMoreElements())
+        {
+            NetworkInterface n = (NetworkInterface) e.nextElement();
+            Enumeration ee = n.getInetAddresses();
+            while (ee.hasMoreElements())
+            {
+                InetAddress i = (InetAddress) ee.nextElement();
+                System.out.println(i.getHostAddress());
+            }
+        }
     }
 }
