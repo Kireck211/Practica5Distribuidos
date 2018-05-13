@@ -327,11 +327,9 @@ public class App
     private static void changeIP() {
         try {
             ipSocket = new DatagramSocket(IP_PORT);
-            InetAddress IPAddress = myIP;
-            byte[] sendData = IPAddress.getHostAddress().getBytes();
-            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 12345);
-            clientSocket.send(sendPacket);
-            clientSocket.close();
+            for(Map.Entry<String, ConnectionData> user: users.entrySet()) {
+                sendDatagram(myIP.getHostAddress(), user.getValue().getIpAddress(), IP_PORT, ipSocket);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
