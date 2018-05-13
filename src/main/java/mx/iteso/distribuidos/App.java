@@ -20,7 +20,7 @@ import static mx.iteso.distribuidos.utils.Constants.*;
 public class App {
     private static Map<String, ConnectionData> users = new HashMap<>();
     private static Gson gson = new Gson();
-    private static InetAddress myIP;
+    private static String myIP = getMyIPAddress();
     private static String coordinator = "192.168.1.2";
     private static ArrayList<String> servers = new ArrayList<String>(){{add("192.168.1.2");add("192.168.1.3");/*add("192.168.1.4");*/}};
     private static DatagramSocket clientSocket;
@@ -30,8 +30,8 @@ public class App {
     private static VotingListener votingListener;
 
     public static void main( String[] args ) {
-        //coordinator = "192.168.1.2";
-        coordinator = "";
+        coordinator = "192.168.1.2";
+        //coordinator = "";
 
         final MainThread mainThread = new MainThread();
         final VoterThread voterThread = new VoterThread();
@@ -53,7 +53,7 @@ public class App {
         pingListener = new PingListener(pingThread, voterThread);
         votingListener = new VotingListener(voteTriggerListener);
 
-        pingThread.initialize(voteTriggerListener);
+        pingThread.initialize(voteTriggerListener, myIP);
 
             /*// TODO PING COORDINATOR
             boolean canPing = true;
@@ -260,4 +260,32 @@ public class App {
     }
 
 
+    private static String getMyIPAddress() {
+        Enumeration e = null;
+        try {
+            e = NetworkInterface.getNetworkInterfaces();
+        } catch (SocketException e1) {
+            e1.printStackTrace();
+        }
+        assert e != null;
+        while(e.hasMoreElements())
+        {
+            NetworkInterface n = (NetworkInterface) e.nextElement();
+            if (n.getName().contains("enp0s")) {
+                Enumeration ee = n.getInetAddresses();
+                while (ee.hasMoreElements()) {
+                    InetAddress i = (InetAddress) ee.nextElement();
+                    if (i.getHostAddress().contains("192")) {
+                        return i.getHostAddress();
+                    }
+                }
+            }
+        }
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e1) {
+            e1.printStackTrace();
+        }
+        return null;
+    }
 }

@@ -13,10 +13,12 @@ public class PingExecution extends Thread {
     private volatile boolean running = true;
     private volatile boolean sendPing = true;
     private VoteTriggerListener voteTriggerListener;
-    private String coordinator = "10.0.0.1";
+    private String coordinator = "192.168.1.2";
+    private String myIP;
 
-    public PingExecution(VoteTriggerListener voteTriggerListener) {
+    public PingExecution(VoteTriggerListener voteTriggerListener, String myIP) {
         this.voteTriggerListener = voteTriggerListener;
+        this.myIP = myIP;
     }
 
     public void enablePing(String coordinator) {
@@ -43,6 +45,8 @@ public class PingExecution extends Thread {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 while (running) {
                     if (sendPing) {
+                        if (myIP.equals(coordinator))
+                            continue;
                         sendDatagram(new OkResponse(), InetAddress.getByName(coordinator), SERVER_PING, sendSocket);
                         pingSocket.receive(receivePacket);
                         System.out.println("Ping received");

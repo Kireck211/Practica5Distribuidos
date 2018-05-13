@@ -16,7 +16,7 @@ import static mx.iteso.distribuidos.utils.Constants.sendDatagram;
 public class Voting {
     public String vote() {
         ArrayList<String> servers = new ArrayList<String>() {{
-            add("127.0.0.1");
+            add("192.168.1.2");
             add("192.168.1.3");
             add("192.168.1.4");
         }};

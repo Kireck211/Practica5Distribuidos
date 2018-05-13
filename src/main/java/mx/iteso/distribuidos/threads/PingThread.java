@@ -7,8 +7,8 @@ public class PingThread {
     private static Thread thread = null;
     private static PingExecution ping = null;
 
-    public void initialize(VoteTriggerListener voteTriggerListener) {
-        ping = new PingExecution(voteTriggerListener);
+    public void initialize(VoteTriggerListener voteTriggerListener, String myIP) {
+        ping = new PingExecution(voteTriggerListener, myIP);
         thread = new Thread(ping);
 
         thread.start();
