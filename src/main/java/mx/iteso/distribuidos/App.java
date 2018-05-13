@@ -460,7 +460,7 @@ public class App
 
     private static void sendCoordinator() {
         try {
-            InetAddress IPAddress; 
+            InetAddress IPAddress;
             CoordinatorResponse coordinatorResponse;
             for(String server: servers) {
                 if (myIP.getHostAddress().equals(server))
