@@ -16,17 +16,20 @@ public class App
 {
     private static Map<String, ConnectionData> users;
     private static Gson gson = new Gson();
-    private static String myIP = "192.168.1.2";
+    private static InetAddress myIP;
     private static String coordinator = "192.168.1.2";
     private static ArrayList<String> servers = new ArrayList<String>(){{add("192.168.1.2");add("192.168.1.3");add("192.168.1.4");}};
+    private static DatagramSocket serversSocket;
 
     public static void main( String[] args ) {
-        getMyIPAddress();
+
+        myIP = getMyIPAddress();
         Listener listener = new Listener();
         listener.start();
         voting();
 
         try {
+            serversSocket = new DatagramSocket(SERVER_PORT);
             DatagramSocket serverSocket = new DatagramSocket(PORT);
             byte[] receiveData = new byte[1024];
             users = new HashMap<>();
@@ -317,7 +320,7 @@ public class App
     private static void changeIP() {
         try {
             DatagramSocket clientSocket = new DatagramSocket();
-            InetAddress IPAddress = InetAddress.getByName("localhost");
+            InetAddress IPAddress = myIP;
             byte[] sendData = IPAddress.getHostAddress().getBytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 12345);
             clientSocket.send(sendPacket);
@@ -418,17 +421,17 @@ public class App
             e.printStackTrace();
         }
 
-        boolean noneResponded = false;
+        boolean responded = false;
         for(Future<Boolean> future : futures) {
             try {
-                noneResponded |= future.get();
+                responded |= future.get();
             } catch (Exception e) {
-                noneResponded = false;
+                responded = false;
             }
         }
         executorService.shutdown();
 
-        if (noneResponded) {
+        if (!responded) {
             changeIP();
             sendCoordinator();
         }
@@ -436,15 +439,9 @@ public class App
 
     private static ArrayList<String> getBullies() {
         ArrayList<String> bullies = new ArrayList<>();
-        String myIP;
-        try {
-            myIP = InetAddress.getByName("localhost").getHostAddress();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            myIP = "127.0.0.1";
-        }
+        String address = myIP.getHostAddress();
         for(String bully : servers) {
-            if (myIP.compareTo(bully) > 0)
+            if (address.compareTo(bully) < 0)
                 bullies.add(bully);
         }
         return bullies;
@@ -456,7 +453,7 @@ public class App
             InetAddress IPAddress;
             CoordinatorResponse coordinatorResponse;
             for(String server: servers) {
-                if (InetAddress.getByName("localhost").getHostAddress().equals(server))
+                if (myIP.getHostAddress().equals(server))
                     continue;
                 IPAddress = InetAddress.getByName(server);
                 coordinatorResponse = new CoordinatorResponse(server);
@@ -473,7 +470,7 @@ public class App
                     @Override
                     public void run() {
                         try {
-                            String myAddress = InetAddress.getByName("localhost").getHostAddress();
+                            String myAddress = myIP.getHostAddress();
                             if (myAddress.equals(coordinator))
                                 return;
                             System.out.println("Enviando ping al coordinador " + coordinator);
@@ -503,7 +500,7 @@ public class App
         );
     }
 
-    private static void getMyIPAddress() {
+    private static InetAddress getMyIPAddress() {
         Enumeration e = null;
         try {
             e = NetworkInterface.getNetworkInterfaces();
@@ -514,12 +511,21 @@ public class App
         while(e.hasMoreElements())
         {
             NetworkInterface n = (NetworkInterface) e.nextElement();
-            Enumeration ee = n.getInetAddresses();
-            while (ee.hasMoreElements())
-            {
-                InetAddress i = (InetAddress) ee.nextElement();
-                System.out.println(i.getHostAddress());
+            if (n.getName().contains("enp0s")) {
+                Enumeration ee = n.getInetAddresses();
+                while (ee.hasMoreElements()) {
+                    InetAddress i = (InetAddress) ee.nextElement();
+                    if (i.getHostAddress().contains("192")) {
+                        return i;
+                    }
+                }
             }
         }
+        try {
+            return InetAddress.getLocalHost();
+        } catch (UnknownHostException e1) {
+            e1.printStackTrace();
+        }
+        return null;
     }
 }
