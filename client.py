@@ -18,7 +18,7 @@ def main():
 	server_lock = threading.Lock()
 	s.connect((server, port))
 
-	thread = threading.Thread(name='receiver', target=receiver, daemon=True)
+	thread = threading.Thread(name='receiver', target=receiver, args=[server_lock], daemon=True)
 	thread.start()
 	server_thread = threading.Thread(name='listener', target=listener, daemon=True, args=[server_lock])
 	server_thread.start()
@@ -137,7 +137,7 @@ def print_commands():
 	print('send_file [username] [filename]\t\t\tsend file to one connected user')
 	print('block_user [username]\t\t\t\tblock user by username')
 
-def receiver():
+def receiver(server_lock):
 	while True:
 		try: 
 			res_raw, address = s.recvfrom(1024)
