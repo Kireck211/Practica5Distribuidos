@@ -20,6 +20,8 @@ public class App
     private static String coordinator = "192.168.1.2";
     private static ArrayList<String> servers = new ArrayList<String>(){{add("192.168.1.2");add("192.168.1.3");add("192.168.1.4");}};
     private static DatagramSocket serversSocket;
+    private static DatagramSocket clientSocket;
+    private static DatagramSocket ipSocket;
 
     public static void main( String[] args ) {
 
@@ -30,12 +32,13 @@ public class App
 
         try {
             serversSocket = new DatagramSocket(SERVER_PORT);
-            DatagramSocket serverSocket = new DatagramSocket(PORT);
+            clientSocket = new DatagramSocket(PORT);
+            ipSocket = new DatagramSocket(IP_PORT);
             byte[] receiveData = new byte[1024];
             users = new HashMap<>();
             while(true) {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                serverSocket.receive(receivePacket);
+                clientSocket.receive(receivePacket);
                 InetAddress IPAddress = receivePacket.getAddress();
                 int port = receivePacket.getPort();
                 int length = receivePacket.getLength();
@@ -50,7 +53,7 @@ public class App
                         users.get(from).setSending_File(false);
                         users.get(from).setFile_receiver("");
                     } catch (Exception e) {
-                        sendFilePackage(receiver.getIpAddress(), receiver.getPort(), serverSocket, receivePacket);
+                        sendFilePackage(receiver.getIpAddress(), receiver.getPort(), clientSocket, receivePacket);
                         continue;
                     }
                 }
@@ -63,7 +66,7 @@ public class App
                             response.length(),
                             IPAddress,
                             port);
-                    serverSocket.send(sendPacket);
+                    clientSocket.send(sendPacket);
                     continue;
                 }
 
@@ -71,28 +74,28 @@ public class App
 
                 switch (baseRequest.getType()) {
                     case SET_NAME:
-                        setName(request, IPAddress, port, serverSocket);
+                        setName(request, IPAddress, port, clientSocket);
                         break;
                     case SEND_MESSAGE:
-                        sendMessage(request, IPAddress, port, serverSocket);
+                        sendMessage(request, IPAddress, port, clientSocket);
                         break;
                     case LIST_USERS:
-                        listUsers(IPAddress, port, serverSocket);
+                        listUsers(IPAddress, port, clientSocket);
                         break;
                     case SEND_FILE:
-                        registerFileRequest(from, IPAddress, port, serverSocket, request);
+                        registerFileRequest(from, IPAddress, port, clientSocket, request);
                         break;
                     case FILE_SENT:
                         fileSent(from);
                         break;
                     case BLOCK_USER:
-                        blockUser(request, IPAddress, port, serverSocket);
+                        blockUser(request, IPAddress, port, clientSocket);
                         break;
                     case EXIT:
                         exit(IPAddress, port);
                         break;
                     default:
-                        notValidRequestError(IPAddress, port, serverSocket);
+                        notValidRequestError(IPAddress, port, clientSocket);
                 }
 
             }
@@ -126,7 +129,10 @@ public class App
     private static void setName(String request, InetAddress IPAddress, int port, DatagramSocket serverSocket) throws IOException {
         SetUser setUser = gson.fromJson(request, SetUser.class);
         if (!users.containsKey(setUser.getData().getContent())) {
-            users.put(setUser.getData().getContent(), new ConnectionData(IPAddress, port));
+            ConnectionData connectionData = new ConnectionData(IPAddress, port);
+            users.put(setUser.getData().getContent(), connectionData);
+            SetNameResponse setNameResponse = new SetNameResponse(setUser.getData().getContent(), connectionData);
+            sendNewName(setNameResponse);
             OkResponse ok = new OkResponse(SET_NAME);
             String response = gson.toJson(ok, OkResponse.class);
             DatagramPacket sendPacket = new DatagramPacket(response.getBytes(),
@@ -227,6 +233,7 @@ public class App
         String user = getUser(IPAddress, port);
         if (user != null) {
             users.remove(user);
+            sendExitName(user);
         }
     }
 
@@ -319,7 +326,7 @@ public class App
 
     private static void changeIP() {
         try {
-            DatagramSocket clientSocket = new DatagramSocket();
+            ipSocket = new DatagramSocket(IP_PORT);
             InetAddress IPAddress = myIP;
             byte[] sendData = IPAddress.getHostAddress().getBytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 12345);
@@ -343,12 +350,12 @@ public class App
         @Override
         public void run() {
             try {
-                DatagramSocket datagramSocket = new DatagramSocket(SERVER_PORT);
+                serversSocket = new DatagramSocket(SERVER_PORT);
                 byte[] receiveData = new byte[1024];
                 while(true)
                 {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                    datagramSocket.receive(receivePacket);
+                    serversSocket.receive(receivePacket);
                     InetAddress IPAddress = receivePacket.getAddress();
                     int port = receivePacket.getPort();
                     int length = receivePacket.getLength();
@@ -361,17 +368,26 @@ public class App
                     {
                         case PING:
                             Ping ping = new Ping();
-                            sendDatagram(ping, IPAddress, port, datagramSocket);
+                            sendDatagram(ping, IPAddress, port, serversSocket);
                             break;
                         case VOTE:
                             OkResponse okResponse = new OkResponse();
-                            sendDatagram(okResponse, IPAddress, port, datagramSocket);
+                            sendDatagram(okResponse, IPAddress, port, serversSocket);
                             voting();
                             break;
                         case COORDINATOR:
                             CoordinatorResponse response = gson.fromJson(request, CoordinatorResponse.class);
                             coordinator = response.getCoordinator();
                             startPings();
+                            break;
+                        case REMOVE_CLIENT:
+                            RemoveClientResponse removeClientResponse = gson.fromJson(request, RemoveClientResponse.class);
+                            users.remove(removeClientResponse.getUser());
+                            break;
+                        case SET_NAME:
+                            SetNameResponse setNameResponse = gson.fromJson(request, SetNameResponse.class);
+                            users.put(setNameResponse.getUser(), setNameResponse.getConnectionData());
+                            break;
                     }
 
                 }
@@ -527,5 +543,26 @@ public class App
             e1.printStackTrace();
         }
         return null;
+    }
+
+    private static void sendNewName(SetNameResponse setNameResponse) {
+        for(String server: servers) {
+            try {
+                sendDatagram(setNameResponse, InetAddress.getByName(server), SERVER_PORT, serversSocket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void sendExitName(String user) {
+        RemoveClientResponse removeClientResponse = new RemoveClientResponse(user);
+        for(String server: servers) {
+            try {
+                sendDatagram(removeClientResponse, InetAddress.getByName(server), SERVER_PORT, serversSocket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

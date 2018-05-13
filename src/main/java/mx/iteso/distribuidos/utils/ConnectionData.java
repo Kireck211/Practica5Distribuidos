@@ -1,23 +1,38 @@
 package mx.iteso.distribuidos.utils;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 
 public class ConnectionData {
+    @SerializedName("ipAddress")
+    @Expose
     private InetAddress ipAddress;
+    @SerializedName("port")
+    @Expose
     private int port;
+    @SerializedName("sending_File")
+    @Expose
     private boolean sending_File;
+    @SerializedName("file_receiver")
+    @Expose
     private String file_receiver;
+    @SerializedName("blockedUsers")
+    @Expose
     private ArrayList<String> blockedUsers;
 
     public ConnectionData() {
+        sending_File = false;
+        file_receiver = "";
+        blockedUsers = new ArrayList<>();
     }
 
     public ConnectionData(InetAddress ipAddress, int port) {
+        this();
         this.ipAddress = ipAddress;
         this.port = port;
-        sending_File = false;
-        blockedUsers = new ArrayList<>();
     }
 
     public InetAddress getIpAddress() {
