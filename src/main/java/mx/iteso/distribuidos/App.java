@@ -34,6 +34,7 @@ public class App
             ipSocket = new DatagramSocket();
             myIP = getMyIPAddress();
             listener = new Listener();
+            listener.start();
             voting();
             byte[] receiveData = new byte[1024];
             while(true) {
@@ -396,6 +397,8 @@ public class App
 
     private static void voting() {
         ArrayList<String> bullys = getBullies();
+        if (listener.isAlive() && !listener.isInterrupted())
+            listener.interrupt();
 
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         List<Callable<Boolean>> callables = new ArrayList<>();
