@@ -14,7 +14,7 @@ import static mx.iteso.distribuidos.utils.Constants.*;
 
 public class App
 {
-    private static Map<String, ConnectionData> users;
+    private static Map<String, ConnectionData> users = new HashMap<>();
     private static Gson gson = new Gson();
     private static InetAddress myIP;
     private static String coordinator = "192.168.1.2";
@@ -25,17 +25,17 @@ public class App
 
     public static void main( String[] args ) {
 
-        myIP = getMyIPAddress();
-        Listener listener = new Listener();
-        listener.start();
-        voting();
+
 
         try {
             serversSocket = new DatagramSocket(SERVER_PORT);
             clientSocket = new DatagramSocket(PORT);
             ipSocket = new DatagramSocket(IP_PORT);
+            myIP = getMyIPAddress();
+            Listener listener = new Listener();
+            listener.start();
+            voting();
             byte[] receiveData = new byte[1024];
-            users = new HashMap<>();
             while(true) {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 clientSocket.receive(receivePacket);
@@ -326,7 +326,6 @@ public class App
 
     private static void changeIP() {
         try {
-            ipSocket = new DatagramSocket(IP_PORT);
             for(Map.Entry<String, ConnectionData> user: users.entrySet()) {
                 sendDatagram(myIP.getHostAddress(), user.getValue().getIpAddress(), IP_PORT, ipSocket);
             }
@@ -348,7 +347,6 @@ public class App
         @Override
         public void run() {
             try {
-                serversSocket = new DatagramSocket(SERVER_PORT);
                 byte[] receiveData = new byte[1024];
                 while(true)
                 {
@@ -398,7 +396,6 @@ public class App
 
     private static void voting() {
         ArrayList<String> bullys = getBullies();
-        int size = bullys.size();
 
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         List<Callable<Boolean>> callables = new ArrayList<>();
@@ -463,15 +460,14 @@ public class App
 
     private static void sendCoordinator() {
         try {
-            DatagramSocket datagramSocket = new DatagramSocket(SERVER_PORT);
-            InetAddress IPAddress;
+            InetAddress IPAddress; 
             CoordinatorResponse coordinatorResponse;
             for(String server: servers) {
                 if (myIP.getHostAddress().equals(server))
                     continue;
                 IPAddress = InetAddress.getByName(server);
                 coordinatorResponse = new CoordinatorResponse(server);
-                sendDatagram(coordinatorResponse, IPAddress, SERVER_PORT, datagramSocket);
+                sendDatagram(coordinatorResponse, IPAddress, SERVER_PORT, serversSocket);
             }
         } catch (Exception e) {
             e.printStackTrace();
