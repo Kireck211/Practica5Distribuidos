@@ -52,8 +52,12 @@ public class App {
         coordinatorListener = new CoordinatorListener(pingThread);
         pingListener = new PingListener(pingThread, voterThread);
         votingListener = new VotingListener(voteTriggerListener);
+        Voting voting = new Voting();
+        String coordinator = voting.vote();
+        if (coordinator != null)
+            mainThread.initialize();
 
-        pingThread.initialize(voteTriggerListener, myIP);
+        //pingThread.initialize(voteTriggerListener, myIP);
 
             /*// TODO PING COORDINATOR
             boolean canPing = true;
