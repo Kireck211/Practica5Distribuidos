@@ -29,6 +29,7 @@ public class Constants {
     public static final int SERVER_VOTE = 1236;
     public static final int SERVER_PING = 1237;
     public static final int SERVER_COORDINATOR = 1238;
+    public static final int SERVER_PROMISE = 1239;
     public static final String PING = "ping";
     public static final String VOTE = "vote";
     public static final String COORDINATOR= "coordinator";

@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static mx.iteso.distribuidos.utils.Constants.SERVER_PROMISE;
 import static mx.iteso.distribuidos.utils.Constants.SERVER_VOTE;
 import static mx.iteso.distribuidos.utils.Constants.sendDatagram;
 
@@ -39,7 +40,7 @@ public class Voting {
                     DatagramSocket socket = new DatagramSocket();
                     Vote vote = new Vote();
                     String request = gson.toJson(vote, Vote.class);
-                    DatagramSocket voteSocket = new DatagramSocket(SERVER_VOTE);
+                    DatagramSocket voteSocket = new DatagramSocket(SERVER_PROMISE);
                     byte[] receiveData = new byte[1024];
                     DatagramPacket sendPacket = new DatagramPacket(request.getBytes(), request.length(), realAddress, SERVER_VOTE);
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
