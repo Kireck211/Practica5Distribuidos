@@ -3,7 +3,8 @@ Programas necesarios para ejecutar back-end y front-end:
 	* Java (corriendo en consola)
 
 Instrucciones para correr back-end:
-1.- Desde la consola ir a la carpeta out/artifacts/
+1.- Desde la consola ir a carpeta raiz
+2.- Entrar a out/artifacts/ProyectoIntegrador_jar/
 2.- Ejecutar el siguiente comando:
 java -jar ProyectoIntegrador_jar.jar
 
